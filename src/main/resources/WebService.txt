@@ -1,0 +1,19 @@
+//直接将WS源码放在项目的某个目录下使用
+d:\Myself\eclipse\workspace\CXF_WS_SPRING\src\main\java>
+wsimport -s ./ -p com.ncs.wsservice http://localhost:8090/CXF_WS_SPRING/ws/EmployService?WSDL
+
+-s: 指定源码输出的位置 （生成编译后的java源码）
+-p: 指定目标包的位置 （生成的java源码的位置）
+
+
+//也可以直接将源码打成jar包放在项目中引用
+jar -cvf JavaService.jar ./com
+
+//两种方式实现WS，各自特点
+CXF ---- ServerFactoryBean 实现WebService服务
+	         1.可以发布WebService服务，但是不支持注解,但是不加注解也会对外暴露服务
+			 2.不支持拦截器
+			 
+CXF ---- JaxWsServerFactoryBean 实现WebService服务	
+             1.支持注解，但是不加注解的话，虽然不会报错，但是也不会对外暴露服务
+             2.可以添加拦截器	

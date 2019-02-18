@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:cxf="http://cxf.apache.org/core"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd 
+    http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+    http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd ">
+
+	<context:component-scan base-package="com.ncs"></context:component-scan>
+
+	<!-- 配置cxf Bean -->
+	<!--http://localhost:8090/CXF_WS_SPRING/ws/ 该地址可以查看所有的WS接口  -->
+	
+	<!-- 1.配置address ： http://localhost:8090/CXF_WS_SPRING/ws/EmployService?WSDL -->
+	<!-- address组成： http://localhost:8090/CXF_SPRING_WS(项目名)/ws(Servlet的路径)/EmployService -->
+	<!-- 2.配置服务接口类 -->
+	<!-- 3.配置服务实现类 -->
+	<!-- 4.配置拦截器 -->
+	<!-- 相当于：JaxWsServerFactoryBean factory = new JaxWsServerFactoryBean(); -->
+	
+     <jaxws:server address="/EmployService" id="EmployeeManagementController"
+		serviceClass="com.ncs.service.EmployeeManagement">
+		<jaxws:serviceBean>
+			<ref bean="employeeManagementImpl" />
+		</jaxws:serviceBean>
+		<jaxws:inInterceptors>
+			<!-- 配置显示日志拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingInInterceptor"></bean>
+		</jaxws:inInterceptors>
+		<jaxws:outInterceptors>
+			<!-- 配置输出日志拦截器 -->
+			<bean class="org.apache.cxf.interceptor.LoggingOutInterceptor"></bean>
+		</jaxws:outInterceptors>
+	</jaxws:server> 
+	
+	<!-- 
+    <bean id="employeeManagementImpl" class="com.ncs.service.EmployeeManagementImpl" />
+    <bean id="employeeManagementController" class="com.ncs.controller.EmployeeManagementController" />
+    <import resource="classpath:META-INF/cxf/cxf.xml"/>
+    <import resource="classpath:META-INF/cxf/cxf-servlet.xml"/>
+    <jaxws:endpoint id="employeeManagement" implementor="com.ncs.service.EmployeeManagementImpl" address="/EmployService"/>
+     -->
+</beans>

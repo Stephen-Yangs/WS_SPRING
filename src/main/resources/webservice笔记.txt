@@ -1,0 +1,277 @@
+webservice笔记详解
+
+1.首先需要提出一个问题：什么是webservice，它具体是做什么的
+	
+	回答：webservice就是一套服务，主要作用是用来协助不同平台之间的web通信的（跨平台，跨语言）
+	
+	
+	手写Socket通信，验证http协议的底层为socket
+	socket的特点：
+	   1.开启端口，该通信为长连接通信，很容易被防火墙回收，可以通过心跳机制来实现，但是开发难度会比较大。
+	   2.传输的数据是字符串，可读性不强
+	   3.socket端口不便于推广
+	     http://45.113.192.102:2345    www.baidu.com
+	   4.性能相较于其他通信协议是最优秀的
+    http协议访问：属于应用层的协议，对socket进行了封装
+       1.跨平台
+       2.传输局不够友好  
+         http://localhost:8080?username=jack&age=18	   
+	   3.对第三方应用提供服务，希望对外暴露服务接口
+      
+    问题:
+       1.数据封装不够友好   （现在使用xml或者json传送数据）
+ 	   2.希望给第三方应用提供web形式的服务     http + xml = web service
+	   
+2.WebService专业名词详解	   
+     XML： Extensible Markup Language  ——扩展性标记语言
+	   1.用于传输格式化的数据，是web服务的基础
+	     namwspace:-命名空间
+		     1.xmlns="http://itcast.cn" 使用默认命名空间
+	         2.xmlns:itcast="http://itcast.cn" 使用指定名词的命名空间
+			 
+	 WSDL： WebService Descripton Language ——web服务描述语言（调用该web服务的api描述）	
+        1.通过XML形式说明服务在什么地方，——地址
+        2.通过xml形式说明服务提供什么样的方法，——如何调用	
+		
+	 Soap： Simple Object Access Protocol ——简单对象访问协议
+	    1.soap作为一个基于xml语言的协议用于网上传输数据
+		2.SOAP = HTTP + XML
+		3.SOAP是基于HTTP的 （这里顺便补充一下，Http是基于Socket的）
+		4.SOAP的组成如下
+		       1.Envelope: 必须的，以XML根元素出现
+			   2.Header：可选的
+			   3.Body：必须的，在body部分包含一些，执行服务器的方法，和发送到服务器的数据		
+                 例如下面这个soap请求： 服务器方法是：GetStockPrice  传递的数据是：StockName：IBM			   
+        POST /InStock HTTP/1.1
+        Host: www.example.org
+        Content-Type: application/soap+xml; charset=utf-8
+        Content-Length: nnn
+        <?xml version="1.0"?>
+        <soap:Envelope xmlns:soap="http://www.w3.org/2001/12/soap-envelope" soap:encodingStyle="http://www.w3.org/2001/12/soap-encoding">
+        <soap:Body xmlns:m="http://www.example.org/stock">
+          <m:GetStockPrice>
+            <m:StockName>IBM</m:StockName>
+          </m:GetStockPrice>
+        </soap:Body>
+        </soap:Envelope>	
+
+3.WebService实践(调用第三方WebService服务)
+      通过客户端访问webService，让应用拥有手机归属地查询功能。
+        1.一般访问方式  HttpClient
+            1.http-get
+            2.http-post
+            3.soap(http+xml)	是Http-Post的一个专用版本，而WebService使用Soap请求，因此WebService也使用Http-Post		
+		  存在两个问题
+            1.如何解析结果
+            2.如何传递参数
+        2.在jdk1.6版本以前，java通过jax-ws包实现WebService功能的支持，早起通过注解的方式进行使用
+            1.早期版本 jax-rpc （remote produce call）	
+
+		3.在jdk1.6之后，java引入了wsimport实现对于WebService功能的支持，通过wsimport生成本地代理，我们在通过此代理来调用第三方服务	
+		    1.wsimport命令的位置： C:\Program Files\Java\jdk1.8.0_171\bin
+			2.wsimport的使用
+			     1.必须配置好java环境变量  
+				   wsimport -help
+				 2.语法： wsimport [options] <wsdl_uri>
+				      选项：  
+					     -d: 生成class文件，默认设置
+						 -s: 指定源码输出的位置 （生成编译后的java源码）
+						 -p: 指定目标包的位置 （生成的java源码的位置）
+					  wsdl_uri:
+                         wsdl的统一资源标识符  例子： http://www.webxml.com.cn/WebServices/WeatherWebService.asmx?WSDL	或者是保存在本地的wsdl文件:  ./WeatherWebService.wsdl	
+
+        调用第三方服务三连：
+		    1.创建服务对象
+			2.获取连接方式 soap1.1 、 soap1.2 、 http-get 、 http-post
+			3.调用服务
+4.WebService实践（自己开发服务，并且发布服务供他人调用）		（注意：默认情况下，@WebService将 public关键字修饰的方法进行发布，而private修饰的方法不会发布）
+      1.自己开发一个WebService服务，声明服务的方式是使用@WebService注解
+	    @WebServices
+      2.发布自己开发的服务以供他人调用
+	    EndPoint.publish(address,implementer)  //参数一表示：服务发布的地址，参数二表示：服务实现者
+      3.测试，自己通过wsimport生成本地代理，来调用自己发布的服务
+            1.创建服务对象
+			2.获取连接方式 soap1.1 、 soap1.2 、 http-get 、 http-post
+			3.调用服务	  
+			
+			
+5.WebService文档解读
+    详见： WebService解读.png
+	
+	
+6.通过注解配置修改WSDL文件的可读性
+      1.修改服务方法的输入参数名称，返回参数名称
+	    1.@WebResult(name="phone") 修改返回参数的名称
+		2.@WebParam(name="osName") 修改输入参数的名称
+	  2.修改服务名称和服务所对应的方法的名称
+	    1.@WebService(serviceName="MobileService") 修改服务的名称
+		2.@WebMethod(operationName="getMobileInfo") 修改服务的方法名称
+	  3.对于某些public方法也并不想发布出去  
+	    1.使用 @WebMethod(exclude=true)注解声明的public方法就不会被发布出去
+	    默认情况下，如果没有添加特殊的注解修饰，public关键字修饰的方法会被服务发布
+
+						  
+			   
+7.名词解释
+      1.soap:
+        Simple object access protocol 简单对象访问协议  http + xmlns
+      2.SOA:
+        Service oriented architecture 面向服务的架构 是一种开发思想（即插即用）	
+      3.wsdl
+	    WebService Description Language WebService描述语言
+      4.uddi	
+        Universal Description Discover Integration 统一描述发现集成
+        我们可以将我们发布的WebService通过uddi注册，发布，集成到一起，用户可以通过uddi查找到对应集成处的服务	
+      5.WebService属于Web应用三层架构的哪一个层次	（三层架构：界面层，业务逻辑层，数据访问层）	
+	    当然属于Service层（业务逻辑层）
+	  6.WebService到底属于客户端还是服务端？
+        这是一个相对的概念，由于服务可以存在相互调用，所以WebService既可以充当服务端，又可以充当客户端，需要根据实际情况做判断。	
+
+
+
+
+8.面向接口编程实现WebService服务
+      1.面向接口实现WebService注意事项
+	    1.在接口类上声明@WebServices
+		2.在接口类的实现类上声明@WebService(endpointInterface="com.ncs.xxx")
+		
+	  2.打jar包
+	    jar [选项] 归档文件名 原始资源位置
+		选项：  
+		    -c 创建一个归档文件（即压缩文件）
+			-v 显示到底压缩了哪些文件，显示压缩过程
+			-f 后面跟文件名，即自己创建的归档文件名
+  		
+	   例子： jar -cvf JavaService.jar ./com		
+
+
+9.CXF框架实现WebService服务   
+      1.比较Endpoint发布服务和CXF框架发布服务的优缺点
+	      EndPoint: 
+		      缺点：   1.没有与系统集成在一起，需要开启一个Main线程。而实际中我们希望tomcat启动时，WebService服务能够开启
+			         2.希望拥有一个WebService服务列表
+		
+          CXF:
+		      介绍：
+			      1.是一套soa的框架
+				  2.是Celtrix（ESB框架）和XFire（webservice）合并而成，并且已经归属于apache
+				  3.CXF的核心是org.apache.cxf.Bus（总线），类似于Spring中的ApplicationContext
+				  4.内置了Jttey容器，(注意：CXF的使用必须依赖于JDK1.6以上)
+              特点：   1.与Spring，Servlet实现了无缝对接，同时内置了Jetty容器用于发布服务		 
+                     2.支持注解声明@WebService服务
+                     3.能够生成一个WebService服务列表
+                     4.能够添加拦截器  例如：输入日志拦截器，输出日志拦截器，用户权限拦截器（有些服务并不想暴露给所有用户）	
+					 
+    
+      2.协议 Soap ，Restful ，Http-get Http-post
+	        Soap = http + xml
+			Restful = http + json
+			xml: 具有较强的可读性，解析不如json方便简洁，但是xml描述丰富，可以拥有丰富的定义生成接口或者相关的类
+			json：具有较强的可读性，解析方便简洁，但是描述简单，不便于生成接口或者相关的类
+	     
+		 
+		 
+       3.CXF ----- ServerFactoryBean 实现WebService服务
+	         1.可以发布WebService服务，但是不支持注解,但是不加注解也会对外暴露服务
+			 2.不支持拦截器
+			 
+	   4.CXF ----- JaxWsServerFactoryBean 实现WebService服务	
+             1.支持注解，但是不加注解的话，虽然不会报错，但是也不会对外暴露服务
+             2.可以添加拦截器			
+
+			 
+10.	Spring和CXF框架的整合
+        1.CXF的Maven依赖：
+		<properties>
+		<cxf.version>2.2.3</cxf.version>
+	    </properties>
+		
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>3.8.1</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-frontend-jaxws</artifactId>
+			<version>${cxf.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-transports-http</artifactId>
+			<version>${cxf.version}</version>
+		</dependency>
+		<!-- Jetty is needed if you're are not using the CXFServlet -->
+		<dependency>
+			<groupId>org.apache.cxf</groupId>
+			<artifactId>cxf-rt-transports-http-jetty</artifactId>
+			<version>${cxf.version}</version>
+		</dependency>
+		
+		 2.CXF核心jar包已经集成了Spring框架源码jar包 
+		 
+		 3.Spring和CXF框架的整合来发布WebService
+		    实现步骤：
+			   1.添加源码jar包依赖
+			   2.编写业务类，通过cxf来发布WebService
+			   3.添加一个CXF请求的Servlet，用来处理Webservice的请求，过滤的地址/ws/*
+			   4.配置Spring配置文件，applicationContext.xml,将cxf的bean交由spring管理
+			   5.在项目文件Web.xml中配置cxf的Servelet，添加Spring的监听
+			   
+			   
+			   
+11.WebService测试工具
+       使用Eclipse内置的Web Service Explorer 在WSIL页面输入服务说明url，即可快速实现Web Service测试
+
+
+12.Soap1.1 和Soap1.2各自特点和区别	
+
+      SOAP 1.1 request: 
+            POST /WSShakespeare.asmx HTTP/1.1 
+            Host: www.xmlme.com 
+            Content-Type: text/xml; charset=utf-8 
+            Content-Length: length 
+            SOAPAction: "http://xmlme.com/WebServices/GetSpeech" 
+            
+            <?xml version="1.0" encoding="utf-8"?> 
+            <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+              xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/"> 
+              <soap:Body> 
+                <GetSpeech xmlns="http://xmlme.com/WebServices"> 
+                  <Request>string</Request> 
+                </GetSpeech> 
+              </soap:Body> 
+            </soap:Envelope> 
+
+     SOAP 1.2 request: 
+            POST /WSShakespeare.asmx HTTP/1.1 
+            Host: www.xmlme.com 
+            Content-Type: application/soap+xml; charset=utf-8 
+            Content-Length: length 
+            
+            <?xml version="1.0" encoding="utf-8"?> 
+            <soap12:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+              xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
+              xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"> 
+              <soap12:Body> 
+                <GetSpeech xmlns="http://xmlme.com/WebServices"> 
+                  <Request>string</Request> 
+                </GetSpeech> 
+              </soap12:Body> 
+            </soap12:Envelope> 
+      主要区别： 
+             1. 普通http post的contentType为application/x-www-form-urlencoded
+             2. SOAP 1.2 使用 "application/soap+xml" 作为 Content-Type 而 SOAP 1.1 使用 "text/xml". 
+             3. SOAP 1.2 不使用 SOAPAction 请求头，而SOAP1.1使用SOAPAction请求头. 
+			 4. 在CXF中两种协议请求的方式也不一样，SOAP1.1使用content-Type:text/xm;charset=UTF-8 而SOAP1.2使用 content-Type:application/soap+xml;charset=UTF-8
+			 5. 在定义Service部分差别如下： Soap1.1是以：soap:address定义 而 Soap1.2是以:  soap12:address定义，且-jdk1.6不支持SOAP1.2形式的访问
+             6. SOAP 1.2 使用 "http://www.w3.org/2003/05/soap-envelope" 作为 the envolope 命名空间 而 SOAP 1.1 使用 "http://schemas.xmlsoap.org/soap/envelope/" 
+			 7. WSIL文件也存在不同		 
+		   
+			   
+			   
+		
+          	   
